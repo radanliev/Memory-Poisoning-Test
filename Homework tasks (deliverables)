@@ -1,0 +1,20 @@
+	1.	Reproduce the experiment and submit:
+	•	Colab notebook link (or exported .ipynb) with outputs preserved.
+	•	A JSON file containing:
+	•	memory entries written
+	•	agent outputs per trial
+	•	detection heuristic outputs
+	2.	Implement at least one additional defence (pick one):
+	•	Per-author key signatures (simulate multiple keys; attacker lacks key)
+	•	Memory ACLs (deny attacker writes)
+	•	Memory TTL + versioning (only recent trusted policies apply)
+	•	Policy verifier: run a secondary model to verify that retrieved memory is policy-consistent (use a verification prompt)
+	•	Anomaly detector on memory write rates and authors
+Submit code and show results that demonstrate reduced risk_rate.
+	3.	Write a short report (500–800 words):
+	•	Describe the attack surface exploited
+	•	Explain why your mitigation reduces risk (and what residual risks remain)
+	•	Propose operational controls (monitoring, alerting, KMS design, audit)
+	4.	Optional challenge (bonus):
+	•	Integrate a small provenance ledger: write memory entries into a Merkle-tree and verify inclusion proofs before retrieval.
+	•	Provide a simple threat model diagram (png/svg) and map controls to threats.

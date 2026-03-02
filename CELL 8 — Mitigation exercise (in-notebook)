@@ -1,0 +1,30 @@
+# CELL 8 — Implement a simple mitigation: prefer policy-author entries and require signature validity
+
+def agent_with_policy_preference(agent: MemoryUsingAgent, prefer_author_prefix="policy_", session="corp-A"):
+    # Compose prompt but filter memory: prefer entries authored by 'policy_engine' or valid signatures
+    mems = agent.memory.read_all(session_filter=session)
+    filtered=[]
+    for m in mems:
+        author = m.get("meta", {}).get("author") if isinstance(m, dict) else m.get("author")
+        signature_valid = m.get("signature_valid", True) if isinstance(m, dict) else True
+        # choose only policy_engine entries, or signed + valid entries
+        if author == "policy_engine" or signature_valid:
+            filtered.append(m)
+    # Overwrite agent memory.read_all temporarily for composition
+    # (for lab convenience, monkeypatch compose_prompt)
+    def compose_filtered(user_instruction, session=session, max_mem_entries=5, include_meta=True):
+        selected = filtered[-max_mem_entries:]
+        comp = []
+        for m in selected:
+            auth = m.get("meta", {}).get("author") if isinstance(m, dict) else m.get("author")
+            entry_text = m.get("entry") if isinstance(m, dict) else m.get("entry")
+            comp.append(f"[MEMORY author={auth}] {entry_text}")
+        memory_block = "\\n".join(comp) if comp else ""
+        prompt = f"Memory:\\n{memory_block}\\n\\nUser instruction:\\n{user_instruction}\\n\\nAnswer concisely:"
+        return prompt
+    agent.compose_prompt = compose_filtered
+    return agent
+
+agent_mitigated = agent_with_policy_preference(agent_vuln)
+print("Mitigated agent (prefer policy_engine) response:")
+print(agent_mitigated.act(instruction, session="corp-A", max_mem_entries=6, temp=0.0))

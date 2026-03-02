@@ -1,0 +1,15 @@
+# CELL 2 — Load model (free model suitable for Colab CPU; change to GPU if available)
+MODEL_NAME = "google/flan-t5-small"   # small, good for demos
+
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+generator = pipeline("text2text-generation", model=model, tokenizer=tokenizer, device_map="auto" if hasattr(model, "is_loaded") else None)
+
+# A helper wrapper calling the model with controlled decoding params
+def call_model(prompt: str, max_length: int = 256, temperature: float = 0.2) -> str:
+    # temperature mapping: keep low for deterministic behaviour unless you want stochasticity
+    out = generator(prompt, max_length=max_length, do_sample=(temperature>0.0), temperature=temperature, num_return_sequences=1)
+    return out[0]['generated_text'].strip()
+
+print("Model ready. Example call:")
+print(call_model("Summarise: The company paid invoices this month."))

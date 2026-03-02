@@ -1,0 +1,31 @@
+# CELL 4 — Agent class that consults memory entries and composes prompts
+
+class MemoryUsingAgent:
+    def __init__(self, model_call, memory_store):
+        self.model_call = model_call
+        self.memory = memory_store
+        self.log = []
+    def compose_prompt(self, user_instruction: str, session: str="global", max_mem_entries: int=5, include_meta: bool=True):
+        # Retrieve memory (most recent first)
+        mems = self.memory.read_all(session_filter=session)
+        # We'll prioritize last N entries (most recent), but emphasize older policy-critical entries by tagging
+        selected = mems[-max_mem_entries:]
+        composed = []
+        for m in selected:
+            # For SignedMemoryStore entries, format may include signature flag
+            if isinstance(self.memory, SignedMemoryStore):
+                composed.append(f"[MEMORY author={m['meta']['author']} valid={m['signature_valid']}] {m['entry']}")
+            else:
+                composed.append(f"[MEMORY author={m['meta']['author']}] {m['entry']}")
+        # Build final prompt: system-like memory block + user instruction
+        memory_block = "\\n".join(composed) if composed else ""
+        prompt = f"Memory:\\n{memory_block}\\n\\nUser instruction:\\n{user_instruction}\\n\\nAnswer concisely:"
+        return prompt
+    def act(self, user_instruction: str, session: str="global", max_mem_entries: int=5, temp: float=0.0):
+        prompt = self.compose_prompt(user_instruction, session, max_mem_entries)
+        self.log.append({"prompt": prompt})
+        resp = self.model_call(prompt, temperature=temp)
+        self.log.append({"response": resp})
+        return resp
+
+print("Agent class ready.")

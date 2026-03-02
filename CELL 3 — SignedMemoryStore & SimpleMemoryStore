@@ -1,0 +1,42 @@
+# CELL 3 — Memory store implementations
+
+class SimpleMemoryStore:
+    """Unsigned memory store (vulnerable to poisoning if attacker can write)"""
+    def __init__(self):
+        self.store = {}  # entry_id -> {entry, meta}
+    def write(self, entry: str, author: str, session: str="global"):
+        eid = str(uuid.uuid4())
+        self.store[eid] = {"entry": entry, "author": author, "session": session, "timestamp": time.time()}
+        return eid
+    def read_all(self, session_filter: str=None) -> List[Dict[str,Any]]:
+        items = list(self.store.values())
+        if session_filter:
+            items = [i for i in items if i.get("session")==session_filter]
+        # order by timestamp (oldest first)
+        items.sort(key=lambda x: x["timestamp"])
+        return items
+
+class SignedMemoryStore:
+    """HMAC-signed memory store. In practice use KMS-backed per-author keys."""
+    def __init__(self, secret_key: bytes):
+        self.key = secret_key
+        self.store = {}
+    def write(self, entry: str, author: str, session: str="global"):
+        meta = {"author": author, "session": session, "timestamp": time.time()}
+        payload = json.dumps({"entry": entry, "meta": meta}, sort_keys=True).encode()
+        signature = hmac.new(self.key, payload, hashlib.sha256).hexdigest()
+        eid = str(uuid.uuid4())
+        self.store[eid] = {"payload": payload.decode(), "signature": signature, "meta": meta}
+        return eid
+    def read_all(self, session_filter: str=None) -> List[Dict[str,Any]]:
+        out=[]
+        for v in self.store.values():
+            entry = json.loads(v["payload"])
+            valid = hmac.compare_digest(v["signature"], hmac.new(self.key, v["payload"].encode(), hashlib.sha256).hexdigest())
+            if session_filter and entry["meta"]["session"]!=session_filter:
+                continue
+            out.append({"entry": entry["entry"], "meta": entry["meta"], "signature_valid": valid})
+        out.sort(key=lambda x: x["meta"]["timestamp"])
+        return out
+
+print("Memory stores defined.")

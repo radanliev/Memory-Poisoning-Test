@@ -1,0 +1,14 @@
+# CELL 6 — Run multiple iterations to see stochastic effects
+def run_trials(agent, instruction, trials=5, temp=0.0):
+    outputs = []
+    for i in range(trials):
+        outputs.append(agent.act(instruction, session="corp-A", max_mem_entries=6, temp=temp))
+    return outputs
+
+print("Vulnerable agent trials (temp=0.0):")
+for o in run_trials(agent_vuln, instruction, trials=3, temp=0.0):
+    print("-", o)
+
+print("\\nSigned-agent trials (temp=0.0):")
+for o in run_trials(agent_signed, instruction, trials=3, temp=0.0):
+    print("-", o)

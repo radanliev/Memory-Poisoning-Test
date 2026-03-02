@@ -1,0 +1,16 @@
+# CELL 1 — Setup
+!pip install --quiet transformers accelerate sentence-transformers
+
+# Imports
+import time
+import json
+import uuid
+import hashlib
+import hmac
+from dataclasses import dataclass
+from typing import Dict, Any, List
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
+import random
+import numpy as np
+
+print("Setup complete.")

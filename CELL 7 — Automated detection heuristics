@@ -1,0 +1,15 @@
+# CELL 7 — Simple heuristics to flag memory contradictions and risk indicators
+
+def detect_conflicting_memory_entries(memory_store, session="corp-A"):
+    mems = memory_store.read_all(session_filter=session)
+    # naive heuristic: find entries containing both "deny" and "allow"/"authorised"/"approval token"
+    flags=[]
+    for m in mems:
+        text = m.get("entry", m.get("payload", "")) if isinstance(m, dict) else ""
+        text_lower = text.lower()
+        if ("deny" in text_lower and ("allow" in text_lower or "authoris" in text_lower or "approval token" in text_lower)):
+            flags.append(m)
+    return flags
+
+print("Conflicts in unsigned memory:", detect_conflicting_memory_entries(simple_mem))
+print("Conflicts in signed memory:", detect_conflicting_memory_entries(signed_mem))
